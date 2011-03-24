@@ -1,0 +1,243 @@
+#!/bin/sh
+#
+# "multipy" is free software; you can redistribute it and/or modify
+# it under the terms of the MIT license. See LICENSE for details.
+#
+
+PYTHON_VERSIONS="2.4 2.5 2.6 2.7 3.0 3.1 3.2"
+URL_TEMPLATE="http://www.python.org/ftp/python/%s/Python-%s.tgz"
+
+### utils ###
+
+# Usage: append VAR STRING
+append() {
+    eval local tmp=\$$1
+    if [ -n "$tmp" ]; then
+        tmp="$tmp $2"
+    else
+        tmp=$2
+    fi
+    eval $1=\$tmp
+}
+
+is_supported_version() {
+    local version
+    for version in $PYTHON_VERSIONS; do
+        [ "$1" = "$version" ] && return
+    done
+
+    # Not found
+    return 1
+}
+
+# Assigns variables: versions
+get_version_args() {
+    local version invalid
+
+    [ -n "$1" ] || die "No Python versions specified!"
+
+    if [ "$*" = "all" ]; then
+        versions=$PYTHON_VERSIONS
+    else
+        versions=$*
+
+        for version in $versions; do
+            is_supported_version $version || append invalid "$version"
+        done
+
+        if [ -n "$invalid" ]; then
+            echo "Invalid/unsupported Python version(s): $invalid" >&2
+            return 1
+        fi
+    fi
+}
+
+is_installed() {
+    [ -e $pythondir/$1 ]
+}
+
+# Assigns variables: tarball
+download() {
+    local v url
+    mkdir -p $sourcedir
+
+    echo "    Checking for latest version..."
+    for micro in $(seq 9 -1 0); do
+        [ "$micro" != "0" ] && v=$1.$micro || v=$1
+        url=$(printf "$URL_TEMPLATE" $v $v)
+
+        if wget -q --spider "$url"; then
+            echo "    Found latest version: $v"
+            tarball=$sourcedir/Python-$v.tgz
+
+            if [ -e $tarball ]; then
+                echo "    ${tarball##*/} already downloaded"
+            else
+                echo "    Downloading..."
+                wget -q -P $sourcedir $url || return 1
+            fi
+            return
+        fi
+    done
+    return 1
+}
+
+die() {
+    [ -n "$1" ] && echo "Error: $1" >&2
+    [ -n "$2" ] && echo "For logs, see $tempdir/*.log"
+    exit 1
+}
+
+
+### commands ###
+
+install() {
+    local versions version installed=0
+    get_version_args "$@" || die # -> versions
+
+    mkdir -p $tempdir
+
+    for version in $versions; do
+        if is_installed $version; then
+            echo "Python $version already installed, skipping"
+            continue
+        fi
+
+        echo "Installing Python $version..."
+
+        download $version || die "Unable to download Python $version"
+        srcdir=$tempdir/${tarball##*/}
+        srcdir=${srcdir%.tgz}
+
+        echo "    Unpacking..."
+        rm -rf $srcdir
+        gunzip -c $tarball | tar -C $tempdir -xf - || die "Unpack failed"
+
+        echo "    Configuring..."
+        (cd $srcdir && ./configure --prefix=$pythondir/$version) \
+            >$tempdir/configure.log.$version 2>&1 \
+            || die "Configure failed" 1
+
+        echo "    Compiling..."
+        (cd $srcdir && make) \
+            >$tempdir/compile.log.$version 2>&1 \
+            || die "Compile failed" 1
+
+        echo "    Installing..."
+        (cd $srcdir && make altinstall) \
+            >$tempdir/install.log.$version 2>&1 \
+            || die "Install failed" 1
+
+        installed=1
+    done
+
+    if [ $installed -eq 1 ]; then
+        # Remove temporary files (disable with -k)
+        if [ $keep_tmp -eq 0 ]; then
+            echo "Cleaning up..."
+            rm -rf $tempdir/*
+        fi
+        echo "All done."
+    fi
+}
+
+remove() {
+    local versions version py
+    local prefix bindir includedir libdir pkgconfigdir
+    get_version_args "$@" || die # -> versions
+
+    for version in $versions; do
+        is_installed $version || continue
+
+        echo "Removing Python $version..."
+        prefix=$pythondir/$version
+        bindir=$prefix/bin
+        includedir=$prefix/include
+        libdir=$prefix/lib
+        pkgconfigdir=$prefix/lib/pkgconfig
+        py=python$version
+
+        rm -rf \
+            $prefix/bin/${py}* \
+            $prefix/include/${py}* \
+            $prefix/lib/lib${py}* \
+            $prefix/lib/${py}* \
+            $prefix/lib/pkgconfig/python-$version.pc
+    done
+
+    echo "All done."
+}
+
+list() {
+    local version
+    for version in $PYTHON_VERSIONS; do
+        is_installed $version && echo $version
+    done
+}
+
+### main ###
+
+usage() {
+    cat >&2 <<EOF
+Usage: $0 [options] command [args...]
+
+Commands:
+    install [version...|all]
+        Installs the given Python versions (e.g. 2.7 3.1) or all
+        supported versions.
+
+    remove [version...|all]
+        Removes the given Python version or all installed versions.
+
+    list
+        Lists installed Python versions
+
+Options:
+    -b BASEDIR   The base directory [default: ~/multipy]
+    -k           Keep temporary files and logs after installation
+
+Copyright (C) 2011 Petri Lehtinen. Licenced under the MIT license.
+
+EOF
+    exit 2
+}
+
+basedir=$HOME/multipy
+keep_tmp=0
+
+while getopts "b:k" opt; do
+    case $opt in
+        b)
+            basedir=$OPTARG
+            ;;
+        k)
+            keep_tmp=1
+            ;;
+        \?)
+            echo >&2
+            usage
+            ;;
+    esac
+done
+
+pythondir=$basedir/pythons
+sourcedir=$basedir/sources
+tempdir=$basedir/tmp
+
+# No more arguments
+[ "$opt" = "--" ] && usage
+
+shift $(expr $OPTIND - 1)
+
+cmd=$1
+shift
+
+case $cmd in
+    install|remove|list)
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+$cmd "$@"
