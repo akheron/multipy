@@ -57,7 +57,7 @@ is_installed() {
 }
 
 # Assigns variables: tarball
-download() {
+download_python() {
     local v url
     mkdir -p $sourcedir
 
@@ -71,10 +71,10 @@ download() {
             tarball=$sourcedir/Python-$v.tgz
 
             if [ -e $tarball ]; then
-                echo "    ${tarball##*/} already downloaded"
+                echo "    Python-$v.tgz already downloaded"
             else
                 echo "    Downloading..."
-                wget -q -P $sourcedir $url || return 1
+                wget -q -P $sourcedir "$url" || return 1
             fi
             return
         fi
@@ -105,7 +105,7 @@ install() {
 
         echo "Installing Python $version..."
 
-        download $version || die "Unable to download Python $version"
+        download_python $version || die "Unable to download Python $version"
         srcdir=$tempdir/${tarball##*/}
         srcdir=${srcdir%.tgz}
 
@@ -170,8 +170,7 @@ Usage: $0 [options] command [args...]
 
 Commands:
     install [version...|all]
-        Installs the given Python versions (e.g. 2.7 3.1) or all
-        supported versions.
+        Installs the given Python versions or all supported versions.
 
     remove [version...|all]
         Removes the given Python version or all installed versions.
