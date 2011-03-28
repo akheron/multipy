@@ -142,27 +142,14 @@ install() {
 }
 
 remove() {
-    local versions version py
-    local prefix bindir includedir libdir pkgconfigdir
+    local versions version
     get_version_args "$@" || die # -> versions
 
     for version in $versions; do
         is_installed $version || continue
 
         echo "Removing Python $version..."
-        prefix=$pythondir/$version
-        bindir=$prefix/bin
-        includedir=$prefix/include
-        libdir=$prefix/lib
-        pkgconfigdir=$prefix/lib/pkgconfig
-        py=python$version
-
-        rm -rf \
-            $prefix/bin/${py}* \
-            $prefix/include/${py}* \
-            $prefix/lib/lib${py}* \
-            $prefix/lib/${py}* \
-            $prefix/lib/pkgconfig/python-$version.pc
+        rm -rf $pythondir/$version
     done
 
     echo "All done."
