@@ -52,6 +52,24 @@ get_version_args() {
     fi
 }
 
+# Assigns variables: version
+get_version_arg() {
+    local v
+    [ -n "$1" ] || die "No Python version specified!"
+
+    for v in $*; do
+        if [ -n "$version" ]; then
+            echo "Single version expected" >&2
+            return 1
+        fi
+        if ! is_supported_version $v; then
+            echo "Invalid/unsupported Python version: $v" >&2
+            return 1
+        fi
+        version=$v
+    done
+}
+
 is_installed() {
     [ -e $pythondir/$1 ]
 }
@@ -162,6 +180,14 @@ list() {
     done
 }
 
+path() {
+    local version
+    get_version_arg "$@" || die # -> version
+
+    is_installed $version || die "Python $version is not installed"
+    echo $pythondir/$version
+}
+
 ### main ###
 
 usage() {
@@ -177,6 +203,10 @@ Commands:
 
     list
         Lists installed Python versions
+
+    path version
+        Print the path to the top directory of the given Python
+        version, e.g. /home/user/multipy/pythons/2.6.
 
 Options:
     -b BASEDIR   The base directory [default: ~/multipy]
@@ -219,7 +249,7 @@ cmd=$1
 shift
 
 case $cmd in
-    install|remove|list)
+    install|remove|list|path)
         ;;
     *)
         usage
