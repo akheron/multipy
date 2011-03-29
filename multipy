@@ -5,7 +5,8 @@
 #
 
 PYTHON_VERSIONS="2.4 2.5 2.6 2.7 3.0 3.1 3.2"
-URL_TEMPLATE="http://www.python.org/ftp/python/%s/Python-%s.tgz"
+PYTHON_URL_TEMPLATE="http://www.python.org/ftp/python/%s/Python-%s.tgz"
+DISTRIBUTE_BASEURL="http://pypi.python.org/packages/source/d/distribute/"
 
 ### utils ###
 
@@ -28,6 +29,14 @@ append() {
         tmp=$2
     fi
     eval $1=\$tmp
+}
+
+# http://rubinium.org/blog/archives/2010/04/05/shell-script-version-compare-vercmp/
+version_cmp() {
+    expr '(' "$1" : '\([^.]*\)' ')' '-' '(' "$2" : '\([^.]*\)' ')' '|' \
+        '(' "$1.0" : '[^.]*[.]\([^.]*\)' ')' '-' '(' "$2.0" : '[^.]*[.]\([^.]*\)' ')' '|' \
+        '(' "$1.0.0" : '[^.]*[.][^.]*[.]\([^.]*\)' ')' '-' '(' "$2.0.0" : '[^.]*[.][^.]*[.]\([^.]*\)' ')' '|' \
+        '(' "$1.0.0.0" : '[^.]*[.][^.]*[.][^.]*[.]\([^.]*\)' ')' '-' '(' "$2.0.0.0" : '[^.]*[.][^.]*[.][^.]*[.]\([^.]*\)' ')'
 }
 
 is_supported_version() {
@@ -99,7 +108,7 @@ download_python() {
     echo "    Checking for latest version..."
     for micro in $(seq 9 -1 0); do
         [ "$micro" != "0" ] && v=$1.$micro || v=$1
-        url=$(printf "$URL_TEMPLATE" $v $v)
+        url=$(printf "$PYTHON_URL_TEMPLATE" $v $v)
 
         if wget -q --spider "$url"; then
             echo "    Found latest version: $v"
@@ -115,6 +124,48 @@ download_python() {
         fi
     done
     return 1
+}
+
+# Assigns variables: latest_distribute
+install_distribute() {
+    local pyversion=$1
+    local version versions tarball srcdir python
+
+    if [ -z "$latest_distribute" ]; then
+        echo "    Checking for latest version of distribute..."
+
+        wget -q -O $tempdir/index.html $DISTRIBUTE_BASEURL || return 1
+
+        versions=$(grep -E '>distribute-[0-9.]+.tar.gz</a>' $tempdir/index.html | sed -r -e 's%.*>distribute-([0-9.]+).tar.gz</a>.*%\1%')
+
+        latest_distribute=0
+        for version in $versions; do
+            if [ "$(version_cmp $version $latest_distribute)" -gt 0 ]; then
+                latest_distribute=$version
+            fi
+        done
+
+        echo "    Found latest version: $latest_distribute"
+
+        tarball=distribute-$latest_distribute.tar.gz
+        if [ ! -e "$tarball" ]; then
+            echo "    Downloading distribute..."
+            wget -q -P $sourcedir "$DISTRIBUTE_BASEURL/$tarball" || return 1
+        else
+            echo "    $tarball already downloaded"
+        fi
+
+        echo "    Unpacking distribute..."
+        rm -rf $tempdir/$tarball
+        gunzip -c $sourcedir/$tarball | tar -C $tempdir -xf - || return 1
+    fi
+
+    echo "    Installing distribute..."
+    srcdir=$tempdir/distribute-$latest_distribute
+    python=$pythondir/$pyversion/bin/python$pyversion
+    (cd $srcdir && $python setup.py install) \
+        > $tempdir/install-distribute.$pyversion.log 2>&1 \
+        || return 1
 }
 
 
@@ -157,6 +208,9 @@ install() {
             >$tempdir/install.$version.log 2>&1 \
             || die "Install failed" 1
 
+        if [ $no_distribute -eq 0 ]; then
+            install_distribute $version || die "Unable to install distribute" 1
+        fi
         installed=1
     done
 
@@ -222,6 +276,7 @@ Commands:
 Options:
     -b BASEDIR   The base directory [default: ~/multipy]
     -k           Keep temporary files and logs after installation
+    -n           Don't install distribute
 
 Copyright (C) 2011 Petri Lehtinen. Licenced under the MIT license.
 
@@ -230,12 +285,16 @@ EOF
 }
 
 basedir=$HOME/multipy
+no_distribute=0
 keep_tmp=0
 
-while getopts "b:k" opt; do
+while getopts "b:kn" opt; do
     case $opt in
         b)
             basedir=$OPTARG
+            ;;
+        n)
+            no_distribute=1
             ;;
         k)
             keep_tmp=1
@@ -246,6 +305,9 @@ while getopts "b:k" opt; do
             ;;
     esac
 done
+
+# Make basedir absolute
+[ "${basedir%/}" = "$basedir" ] && basedir=$(pwd)/$basedir
 
 pythondir=$basedir/pythons
 sourcedir=$basedir/sources
