@@ -153,7 +153,7 @@ install() {
             || die "Compile failed" 1
 
         echo "    Installing..."
-        (cd $srcdir && make altinstall) \
+        (cd $srcdir && make install) \
             >$tempdir/install.log.$version 2>&1 \
             || die "Install failed" 1
 
