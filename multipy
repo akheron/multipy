@@ -389,7 +389,7 @@ while getopts "b:kn" opt; do
 done
 
 # Make basedir absolute
-[ "${basedir%/}" = "$basedir" ] && basedir=$(pwd)/$basedir
+[ "${basedir#/}" = "$basedir" ] && basedir=$(pwd)/$basedir
 
 pythondir=$basedir/pythons
 sourcedir=$basedir/sources
