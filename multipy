@@ -308,6 +308,8 @@ list() {
     for version in $PYTHON_VERSIONS; do
         is_installed $version && echo $version
     done
+
+    return 0
 }
 
 path() {
