@@ -61,12 +61,29 @@ Show help::
 
     $ multipy -h
 
+Here's a list of supported command line options::
+
+    -b BASEDIR   The base directory [default: ~/multipy]
+    -k           Keep temporary files and logs after installation
+    -n           Don't install distribute
+
+Upon startup, multipy tries to source ``~/.multipyrc`` and
+``~/.config/multipyrc``. The following variables can be assigned in
+these files::
+
+    Assignment...     has the same effect as:
+
+    basedir=BASEDIR   -b BASEDIR
+    keep_tmp=1        -k
+    no_distribute=1   -n
+
 
 Under the hood
 ==============
 
 By default, the top directory of the multipy is
-``basedir=$HOME/multipy``. This can be changed with the ``-b`` option.
+``basedir=$HOME/multipy``. This can be changed with the ``-b`` option
+or in the config files discussed in the last section.
 
 When Python X.Y is installed, the following things happen:
 

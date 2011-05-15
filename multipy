@@ -355,12 +355,21 @@ Commands:
         This is meant to be used to easily source the activate script
         in the shell:
 
-            . $(multipy activate 2.6)
+            . \$(multipy activate 2.6)
 
 Options:
     -b BASEDIR   The base directory [default: ~/multipy]
     -k           Keep temporary files and logs after installation
     -n           Don't install distribute
+
+Upon startup, ~/.multipyrc and ~/.config/multipyrc are loaded. The
+following variables can be assigned in these files:
+
+    Assignment...     has the same effect as:
+
+    basedir=BASEDIR   -b BASEDIR
+    keep_tmp=1        -k
+    no_distribute=1   -n
 
 Copyright (C) 2011 Petri Lehtinen. Licenced under the MIT license.
 
@@ -371,6 +380,11 @@ EOF
 basedir=$HOME/multipy
 no_distribute=0
 keep_tmp=0
+
+# Load config files
+: ${XDG_CONFIG_HOME:=$HOME/.config}
+[ -f $HOME/.multipyrc ] && . $HOME/.multipyrc
+[ -f $XDG_CONFIG_HOME/multipyrc ] && . $XDG_CONFIG_HOME/multipyrc
 
 while getopts "b:kn" opt; do
     case $opt in
