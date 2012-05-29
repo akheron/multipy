@@ -417,6 +417,7 @@ tempdir=$basedir/tmp
 shift $(expr $OPTIND - 1)
 
 cmd=$1
+[ -z "$1" ] && usage
 shift
 
 case $cmd in
