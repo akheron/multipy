@@ -166,8 +166,8 @@ download_python() {
     mkdir -p $sourcedir
 
     echo "    Checking for latest version..."
-    for micro in $(seq 9 -1 0); do
-        [ "$micro" != "0" ] && v=$1.$micro || v=$1
+    for micro in $(seq 9 -1 -1); do
+        [ "$micro" != "-1" ] && v=$1.$micro || v=$1
         url=$(printf "$PYTHON_URL_TEMPLATE" $v $v)
 
         if wget -q --spider "$url"; then
