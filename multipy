@@ -4,7 +4,7 @@
 # it under the terms of the MIT license. See LICENSE for details.
 #
 
-PYTHON_VERSIONS="2.4 2.5 2.6 2.7 3.0 3.1 3.2"
+PYTHON_VERSIONS="2.4 2.5 2.6 2.7 3.0 3.1 3.2 3.3"
 PYTHON_URL_TEMPLATE="http://www.python.org/ftp/python/%s/Python-%s.tgz"
 DISTRIBUTE_BASEURL="http://pypi.python.org/packages/source/d/distribute/"
 
