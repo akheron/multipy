@@ -66,16 +66,18 @@ Here's a list of supported command line options::
     -b BASEDIR   The base directory [default: ~/multipy]
     -k           Keep temporary files and logs after installation
     -n           Don't install distribute
+    -j N         Compile with N jobs in parallel
 
 Upon startup, multipy tries to source ``~/.multipyrc`` and
 ``~/.config/multipyrc``. The following variables can be assigned in
 these files::
 
-    Assignment...     has the same effect as:
+    Variable:         Command-line option:
 
     basedir=BASEDIR   -b BASEDIR
     keep_tmp=1        -k
     no_distribute=1   -n
+    jobs=2            -j 2
 
 
 Under the hood
@@ -120,7 +122,7 @@ disk space.
 Copyright
 =========
 
-Copyright (C) 2011 Petri Lehtinen. Licensed under the MIT license.
+Copyright (C) 2011-2013 Petri Lehtinen. Licensed under the MIT license.
 
 
 .. _distribute: http://pypi.python.org/pypi/distribute
