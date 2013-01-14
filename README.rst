@@ -101,6 +101,7 @@ When Python X.Y is installed, the following things happen:
   ``$basedir/sources`` (if not already there). It's extracted to a
   directory under ``$basedir/tmp`` and ``python setup.py install`` is
   run with the Python version that was installed in the previous step.
+  (This step can be skipped using the ``-n`` option.)
 
 * An ``activate`` script is installed to the ``bin/`` directory of the
   Python installation.
