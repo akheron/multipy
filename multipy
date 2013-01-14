@@ -156,6 +156,25 @@ get_version_arg() {
     done
 }
 
+try_cmd() {
+    local result
+
+    result=$(eval "$1" 2>/dev/null)
+    if [ $? -eq 0 -a -n "$result" ]; then
+        echo $result
+    else
+        return 1
+    fi
+}
+
+# Prints the number of CPUs, or 1 if unable to find out
+cpu_count() {
+    try_cmd "nproc" && return
+    try_cmd "[ -e /proc/cpuinfo ] && grep ^processor /proc/cpuinfo | wc -l" && return
+    try_cmd "sysctl -n hw.ncpu" && return
+    echo 1
+}
+
 is_installed() {
     [ -e $pythondir/$1 ]
 }
@@ -259,7 +278,7 @@ install() {
             || die "Configure failed" 1
 
         echo "    Compiling..."
-        (cd $srcdir && make) \
+        (cd $srcdir && make -j "$jobs") \
             >$tempdir/compile.$version.log 2>&1 \
             || die "Compile failed" 1
 
@@ -361,6 +380,7 @@ Options:
     -b BASEDIR   The base directory [default: ~/multipy]
     -k           Keep temporary files and logs after installation
     -n           Don't install distribute
+    -j N         Compile with N jobs in parallel [default: $jobs_default]
 
 Upon startup, ~/.multipyrc and ~/.config/multipyrc are loaded. The
 following variables can be assigned in these files:
@@ -370,6 +390,7 @@ following variables can be assigned in these files:
     basedir=BASEDIR   -b BASEDIR
     keep_tmp=1        -k
     no_distribute=1   -n
+    jobs=2            -j 2
 
 Copyright (C) 2011 Petri Lehtinen. Licenced under the MIT license.
 
@@ -380,13 +401,14 @@ EOF
 basedir=$HOME/multipy
 no_distribute=0
 keep_tmp=0
+jobs_default=$(cpu_count)
 
 # Load config files
 : ${XDG_CONFIG_HOME:=$HOME/.config}
 [ -f $HOME/.multipyrc ] && . $HOME/.multipyrc
 [ -f $XDG_CONFIG_HOME/multipyrc ] && . $XDG_CONFIG_HOME/multipyrc
 
-while getopts "b:kn" opt; do
+while getopts "b:knj:" opt; do
     case $opt in
         b)
             basedir=$OPTARG
@@ -397,12 +419,17 @@ while getopts "b:kn" opt; do
         k)
             keep_tmp=1
             ;;
+        j)
+            jobs=$OPTARG
+            ;;
         \?)
             echo >&2
             usage
             ;;
     esac
 done
+
+[ -z "$jobs" ] && jobs=$jobs_default
 
 # Make basedir absolute
 [ "${basedir#/}" = "$basedir" ] && basedir=$(pwd)/$basedir
