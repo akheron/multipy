@@ -184,8 +184,8 @@ download_python() {
     local v url
     mkdir -p $sourcedir
 
-    echo "    Checking for latest version..."
-    for micro in $(seq 9 -1 -1); do
+    echo "    Checking for version $1.$2 ..."
+    for micro in $(seq $2 -1 -1); do
         [ "$micro" != "-1" ] && v=$1.$micro || v=$1
         url=$(printf "$PYTHON_URL_TEMPLATE" $v $v)
 
@@ -264,7 +264,7 @@ install() {
 
         echo "Installing Python $version..."
 
-        download_python $version || die "Unable to download Python $version"
+        download_python $version $microup  || die "Unable to download Python $version"
         srcdir=$tempdir/${tarball##*/}
         srcdir=${srcdir%.tgz}
 
@@ -381,6 +381,7 @@ Options:
     -k           Keep temporary files and logs after installation
     -n           Don't install distribute
     -j N         Compile with N jobs in parallel [default: $jobs_default]
+    -m M         For install specify micro version M: E.g. '$ ./multipy -m 3 install 2.7' installs 2.7.3
 
 Upon startup, ~/.multipyrc and ~/.config/multipyrc are loaded. The
 following variables can be assigned in these files:
@@ -391,6 +392,7 @@ following variables can be assigned in these files:
     keep_tmp=1        -k
     no_distribute=1   -n
     jobs=2            -j 2
+    micro=3           -m 3
 
 Copyright (C) 2011-2013 Petri Lehtinen. Licenced under the MIT license.
 
@@ -402,13 +404,14 @@ basedir=$HOME/multipy
 no_distribute=0
 keep_tmp=0
 jobs_default=$(cpu_count)
+microup_default=9
 
 # Load config files
 : ${XDG_CONFIG_HOME:=$HOME/.config}
 [ -f $HOME/.multipyrc ] && . $HOME/.multipyrc
 [ -f $XDG_CONFIG_HOME/multipyrc ] && . $XDG_CONFIG_HOME/multipyrc
 
-while getopts "b:knj:" opt; do
+while getopts "b:knjm:" opt; do
     case $opt in
         b)
             basedir=$OPTARG
@@ -422,6 +425,9 @@ while getopts "b:knj:" opt; do
         j)
             jobs=$OPTARG
             ;;
+        m)
+            microup=$OPTARG
+            ;;
         \?)
             echo >&2
             usage
@@ -430,6 +436,7 @@ while getopts "b:knj:" opt; do
 done
 
 [ -z "$jobs" ] && jobs=$jobs_default
+[ -z "$microup" ] && microup=$micro_default
 
 # Make basedir absolute
 [ "${basedir#/}" = "$basedir" ] && basedir=$(pwd)/$basedir
