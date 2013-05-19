@@ -395,6 +395,8 @@ following variables can be assigned in these files:
     micro=3           -m 3
 
 Copyright (C) 2011-2013 Petri Lehtinen. Licenced under the MIT license.
+Modified (C) by Ondrej Platek with good intentions but without any guaranties
+and keeping the MIT license!
 
 EOF
     exit 2
