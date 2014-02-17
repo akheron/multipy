@@ -8,7 +8,7 @@ the newest version of any Python X.Y, compiles the source, and
 installs everything under a single directory hierarchy. By default,
 the install location is ``~/multipy``.
 
-distribute_ is also installed along with each Python version, as well
+setuptools_ is also installed along with each Python version, as well
 as an activate script in the spirit of virtualenv_, for easier shell
 integration.
 
@@ -65,7 +65,7 @@ Here's a list of supported command line options::
 
     -b BASEDIR   The base directory [default: ~/multipy]
     -k           Keep temporary files and logs after installation
-    -n           Don't install distribute
+    -n           Don't install setuptools
     -j N         Compile with N jobs in parallel
 
 Upon startup, multipy tries to source ``~/.multipyrc`` and
@@ -76,7 +76,8 @@ these files::
 
     basedir=BASEDIR   -b BASEDIR
     keep_tmp=1        -k
-    no_distribute=1   -n
+    no_setuptools=1   -n
+    no_distribute=1   -n    (for backwards compatibility)
     jobs=2            -j 2
 
 
@@ -99,7 +100,7 @@ When Python X.Y is installed, the following things happen:
   ``$basedir/pythons/X.Y/``. This is the standard ``configure``,
   ``make``, ``make install`` procedure.
 
-* The newest release of distribute_ is downloaded to
+* The newest release of setuptools_ is downloaded to
   ``$basedir/sources`` (if not already there). It's extracted to a
   directory under ``$basedir/tmp`` and ``python setup.py install`` is
   run with the Python version that was installed in the previous step.
@@ -125,5 +126,5 @@ Copyright
 Copyright (C) 2011-2014 Petri Lehtinen. Licensed under the MIT license.
 
 
-.. _distribute: http://pypi.python.org/pypi/distribute
+.. _setuptools: http://pypi.python.org/pypi/setuptools
 .. _virtualenv: http://pypi.python.org/pypi/virtualenv
