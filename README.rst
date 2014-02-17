@@ -122,7 +122,7 @@ disk space.
 Copyright
 =========
 
-Copyright (C) 2011-2013 Petri Lehtinen. Licensed under the MIT license.
+Copyright (C) 2011-2014 Petri Lehtinen. Licensed under the MIT license.
 
 
 .. _distribute: http://pypi.python.org/pypi/distribute
