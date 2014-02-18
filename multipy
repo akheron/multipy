@@ -313,6 +313,9 @@ install() {
             >$tempdir/compile.$version.log 2>&1 \
             || die "Compile failed" 1
 
+        sed -n '/^necessary bits/,/detect_modules/p' \
+            < $tempdir/compile.$version.log
+
         echo "    Installing..."
         (cd $srcdir && make install) \
             >$tempdir/install.$version.log 2>&1 \
