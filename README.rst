@@ -71,7 +71,7 @@ Here's a list of supported command line options::
     -b BASEDIR   The base directory [default: ~/multipy]
     -k           Keep temporary files and logs after installation
     -n           Don't install setuptools
-    -j N         Compile with N jobs in parallel
+    -j N         Compile with N jobs in parallel [default: number of CPUs]
 
 Upon startup, multipy tries to source ``~/.multipyrc`` and
 ``~/.config/multipyrc``. The following variables can be assigned in
