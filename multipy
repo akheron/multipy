@@ -340,14 +340,12 @@ install() {
 }
 
 remove() {
-    local versions version
-    get_version_args "$@" || die # -> versions
-
-    for version in $versions; do
-        is_installed $version || continue
-
-        echo "Removing Python $version..."
-        rm -rf $pythondir/$version
+    local version
+    for version in $(list); do
+        if [ "$1" = "all" -o "$1" = "$version" ]; then
+            echo "Removing Python $version..."
+            rm -rf $pythondir/$version
+        fi
     done
 
     echo "All done."
