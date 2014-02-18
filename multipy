@@ -99,10 +99,25 @@ version_cmp() {
         '(' "$1.0.0.0" : '[^.]*[.][^.]*[.][^.]*[.]\([^.]*\)' ')' '-' '(' "$2.0.0.0" : '[^.]*[.][^.]*[.][^.]*[.]\([^.]*\)' ')'
 }
 
+# X.Y
+is_minor_version() {
+    echo $1 | grep -E -q '^[0-9]+.[0-9]+$'
+}
+
+# X.Y.Z
+is_micro_version() {
+    echo $1 | grep -E -q '^[0-9]+.[0-9]+.[0-9]+$'
+}
+
+get_minor_version() {
+    echo "$1" | sed -r -e 's/^([0-9]+\.[0-9]+)(\.[0-9]+)?$/\1/'
+}
+
 is_supported_version() {
-    local version
-    for version in $PYTHON_VERSIONS; do
-        [ "$1" = "$version" ] && return
+    local minor_version v
+    minor_version=$(get_minor_version $1)
+    for v in $PYTHON_VERSIONS; do
+        [ "$minor_version" = "$v" ] && return
     done
 
     # Not found
@@ -179,36 +194,44 @@ is_installed() {
     [ -e $pythondir/$1 ]
 }
 
-# Assigns variables: tarball
-download_python() {
-    local v url
-    mkdir -p $sourcedir
-
-    echo "    Checking for latest version..."
+# Assigns variables: latest_python_version
+find_latest_python() {
+    echo "Checking for latest version of Python $1..."
     for micro in $(seq 9 -1 -1); do
         [ "$micro" != "-1" ] && v=$1.$micro || v=$1
         url=$(printf "$PYTHON_URL_TEMPLATE" $v $v)
 
         if wget -q --spider "$url"; then
-            echo "    Found latest version: $v"
-            tarball=$sourcedir/Python-$v.tgz
-
-            if [ -e $tarball ]; then
-                echo "    Python-$v.tgz already downloaded"
-            else
-                echo "    Downloading..."
-                wget -q -P $sourcedir "$url" || return 1
-            fi
-            return
+            echo "Found latest version: $v"
+            latest_python_version=$v
+            return 0
         fi
     done
+
     return 1
+}
+
+# Assigns variables: tarball
+download_python() {
+    local url
+    mkdir -p $sourcedir
+
+    url=$(printf "$PYTHON_URL_TEMPLATE" $1 $1)
+    tarball=$sourcedir/Python-$1.tgz
+    if [ -e $tarball ]; then
+        echo "    Python-$1.tgz already downloaded"
+    else
+        echo "    Downloading..."
+        wget -q -P $sourcedir "$url" || return 1
+    fi
 }
 
 # Assigns variables: latest_setuptools
 install_setuptools() {
-    local pyversion=$1
+    local pyversion=$1 pyminor
     local version versions tarball srcdir python
+
+    pyminor=$(get_minor_version $pyversion)
 
     if [ -z "$latest_setuptools" ]; then
         echo "    Checking for latest version of setuptools..."
@@ -241,7 +264,7 @@ install_setuptools() {
 
     echo "    Installing setuptools..."
     srcdir=$tempdir/setuptools-$latest_setuptools
-    python=$pythondir/$pyversion/bin/python$pyversion
+    python=$pythondir/$pyversion/bin/python$pyminor
     (cd $srcdir && $python setup.py install) \
         > $tempdir/install-setuptools.$pyversion.log 2>&1 \
         || return 1
@@ -251,12 +274,20 @@ install_setuptools() {
 ### commands ###
 
 install() {
-    local versions version installed=0
+    local versions version latest_python_version installed=0
     get_version_args "$@" || die # -> versions
 
     mkdir -p $tempdir
 
     for version in $versions; do
+        if is_minor_version "$version"; then
+            if find_latest_python "$version"; then  # -> latest_python_version
+                version=$latest_python_version
+            else
+                die "Nothing found"
+            fi
+        fi
+
         if is_installed $version; then
             echo "Python $version already installed, skipping"
             continue
@@ -324,8 +355,12 @@ remove() {
 
 list() {
     local version
-    for version in $PYTHON_VERSIONS; do
-        is_installed $version && echo $version
+    for version in $pythondir/*; do
+        version=$(basename $version)
+        is_micro_version $version && echo $version
+
+        # Backwards compatibility
+        is_minor_version $version && echo $version
     done
 
     return 0
@@ -356,6 +391,8 @@ Usage: $0 [options] command [args...]
 Commands:
     install version...|all
         Installs the given Python versions or all supported versions.
+        If version is of the form X.Y (e.g. 3.2), install the latest
+        release of that series.
 
     remove version...|all
         Removes the given Python version or all installed versions.

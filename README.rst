@@ -25,11 +25,16 @@ releases).
 Usage
 =====
 
-Install Python 2.7 and 3.2::
+Install Python 2.7.6 and 3.3.4::
 
-    $ multipy install 2.7 3.2
+    $ multipy install 2.7.6 3.3.4
 
-Install all supported Python versions (2.4 and up)::
+Install the latest release of Python 2.6:
+
+    $ multipy install 2.6
+
+Install all latest releases of all supported Python versions (2.4 and
+up)::
 
     $ multipy install all
 
@@ -37,25 +42,25 @@ List installed Python versions::
 
     $ multipy list
 
-Remove Python 2.7::
+Remove Python 2.7.6::
 
-    $ multipy remove 2.7
+    $ multipy remove 2.7.6
 
 Use a custom installation directory::
 
     $ multipy -b /path/to/somewhere install 3.2
 
-Tweak ``PATH`` to "activate" the local Python 2.5::
+Tweak ``PATH`` to "activate" the local Python 2.5.6::
 
-    $ . $(multipy activate 2.5)
+    $ . $(multipy activate 2.5.6)
 
 After this, e.g. ``python`` and ``easy_install`` can be used without
 an absolute path. To leave this mode, use ``deactivate``.
 
-Show the directory where Python 3.1 has been installed::
+Show the directory where Python 3.1.5 has been installed::
 
-    $ multipy path 3.1
-    /home/you/multipy/pythons/3.1
+    $ multipy path 3.1.5
+    /home/you/multipy/pythons/3.1.5
 
 Show help::
 
@@ -88,16 +93,18 @@ By default, the top directory of the multipy is
 ``basedir=$HOME/multipy``. This can be changed with the ``-b`` option
 or in the config files discussed in the last section.
 
-When Python X.Y is installed, the following things happen:
+When Python X.Y[.Z] is installed, the following things happen:
 
-* The source tarball of the newest release Python X.Y.Z is first
-  downloaded to ``$basedir/sources``. For example, when writing this,
-  the newest version of Python 2.7 is 2.7.1. Installing older point
-  releases is not supported.
+* If Z is not specified the newest released X.Y is figured out. For
+  example, when writing this, the newest version of Python 2.7 is
+  2.7.6, so Z is set to 6.
+
+* The source tarball of Python X.Y.Z is downloaded to
+  ``$basedir/sources``.
 
 * The source is then extracted to a temporary directory under
   ``$basedir/tmp`` and compiled. The result is installed to
-  ``$basedir/pythons/X.Y/``. This is the standard ``configure``,
+  ``$basedir/pythons/X.Y.Z/``. This is the standard ``configure``,
   ``make``, ``make install`` procedure.
 
 * The newest release of setuptools_ is downloaded to
@@ -128,3 +135,5 @@ Copyright (C) 2011-2014 Petri Lehtinen. Licensed under the MIT license.
 
 .. _setuptools: http://pypi.python.org/pypi/setuptools
 .. _virtualenv: http://pypi.python.org/pypi/virtualenv
+
+
