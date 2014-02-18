@@ -233,6 +233,12 @@ install_setuptools() {
 
     pyminor=$(get_minor_version $pyversion)
 
+    # Setuptools doesn't support 2.4 or 2.5
+    if [ "$pyminor" = "2.4" -o "$pyminor" = "2.5" ]; then
+        echo "    Setuptools does not support Python $pyminor, skip"
+        return
+    fi
+
     if [ -z "$latest_setuptools" ]; then
         echo "    Checking for latest version of setuptools..."
 
@@ -313,7 +319,7 @@ install() {
             >$tempdir/compile.$version.log 2>&1 \
             || die "Compile failed" 1
 
-        sed -n '/^necessary bits/,/detect_modules/p' \
+        sed -n '/necessary bits/,/detect_modules/p' \
             < $tempdir/compile.$version.log
 
         echo "    Installing..."
